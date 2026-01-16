@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词消消乐 - 中英文匹配</title>
+    <!-- 引入外部CSS样式表 -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>单词消消乐</h1>
+    <!-- 统计面板 -->
+    <div class="stats-panel">
+        <div>计时：<span id="timer">00:00</span></div>
+        <div>点击次数：<span id="clickCount">0</span></div>
+    </div>
+    <div class="game-container" id="gameContainer"></div>
+    <button class="control-btn" id="resetBtn">重新开始游戏</button>
+
+    <!-- 开局准备弹窗 -->
+    <div class="prepare-modal" id="prepareModal">
+        <div class="modal-content">
+            <h2>🤩 准备开始单词消消乐！</h2>
+            <div style="font-size: 20px; color: #34495e; margin-bottom: 1.5rem;">
+                规则：选择英文与对应中文匹配消除<br>
+                提示：多余点击会产生罚时哦！
+            </div>
+            <button class="modal-btn" id="startGameBtn">准备好了，开始游戏</button>
+        </div>
+    </div>
+
+    <!-- 通关弹窗（展示最终用时+详细计算说明） -->
+    <div class="score-modal" id="scoreModal">
+        <div class="modal-content">
+            <h2>🎉 通关成功！</h2>
+            <div class="score-info">
+                <div>总点击次数：<span id="finalClicks">0</span> 次</div>
+                <div>实际用时：<span id="actualTime">0</span> 秒</div>
+                <div>最终用时（含罚时）：<span id="finalTime" class="final-time">0</span> 秒</div>
+                <div class="time-desc" id="timeDesc"></div>
+            </div>
+            <button class="modal-btn" id="modalResetBtn">再来一局</button>
+        </div>
+    </div>
+
+    <!-- 引入外部JavaScript文件（放在body末尾，确保DOM加载完成） -->
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+director,导演
+drama,戏剧
+leader,领导者
+role,角色
+freeze,突然停止；呆住
+silence,沉默，缄默
+awful,糟糕的，恶劣的；讨厌的
+advise,建议
+yours,你的
+teamwork,合作，协作，配合
+strength,优点，长处，优势
+weakness,弱点，缺点，不足
+queen,女王
+vote,投票，表决
+suggestion,建议，提议
+meeting,会议，集会
+captain,队长，组长
+camp,扎营，宿营，露营
+go camping,（尤指到山上或森林里）去露营
+tape,（划分地界或捆扎东西等用的）带子，线带
+voluntary,志愿的
+cooperation,合作，协作
+shy,羞怯的，腼腆的（尤指在陌生人面前）
+confidence,自信，信心
+noon,正午，中午
+climber,登山者，登山运动员
+roof,顶，顶部
+the "roof of the world",世界屋脊
+thirty-metre-high,三十米高的
+ladder,梯子
+teammate,队友
+lower,把（某物）移低，降下
+painful,令人痛苦的
+rope,绳，粗绳，绳索，缆
+effort,努力
+north,北，北方
+base,基地，根据地，总部，大本营
+base camp,（登山）大本营
+mountaineering,登山运动
