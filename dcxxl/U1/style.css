@@ -127,11 +127,14 @@ h1 {
     transform: translateY(-2px);
 }
 
+/* 修改：弹性网格样式，支持动态排版（不再固定4列） */
 .game-container {
     display: grid;
-    grid-template-columns: repeat(4, 120px);
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* 自动适配，最小120px每列 */
     gap: 15px;
     margin-bottom: 2rem;
+    width: 90%; /* 限制最大宽度，避免过宽 */
+    max-width: 800px;
 }
 
 .word-btn {
@@ -148,25 +151,13 @@ h1 {
     text-align: center;
     padding: 5px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white; /* 文字固定白色，保证可读性 */
+    margin: 0 auto; /* 按钮居中，避免网格拉伸变形 */
 }
 
-.word-btn.english {
-    background-color: #3498db;
-    color: white;
-}
-
-.word-btn.chinese {
-    background-color: #2ecc71;
-    color: white;
-}
-
-.word-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-}
-
+/* 移除原有固定的 english/chinese 颜色类，改为动态赋值 */
 .word-btn.selected {
-    background-color: #e67e22;
+    background-color: #e67e22; /* 选中状态颜色不变，突出显示 */
     transform: scale(1.05);
     box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
 }
@@ -196,6 +187,7 @@ h1 {
 }
 
 @media (max-width: 550px) {
+    /* 响应式优化：移动端限制最大列数为2 */
     .game-container {
         grid-template-columns: repeat(2, 120px);
     }
