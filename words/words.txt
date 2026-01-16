@@ -1,0 +1,10 @@
+apple,苹果
+banana,香蕉
+cat,猫
+dog,狗
+elephant,大象
+fish,鱼
+grape,葡萄
+house,房子
+orange,橙子
+bird,鸟
