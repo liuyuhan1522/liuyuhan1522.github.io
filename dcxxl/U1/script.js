@@ -17,6 +17,20 @@ let clickCount = 0;
 let wordGroupCount = 0;
 let minClickCount = 0;
 
+// 新增：多种按钮背景色数组（选取高饱和度、高可读性的颜色，避免相近色）
+const btnColors = [
+    "#3498db", // 蓝色
+    "#2ecc71", // 绿色
+    "#e74c3c", // 红色
+    "#f39c12", // 橙色
+    "#9b59b6", // 紫色
+    "#1abc9c", // 青绿色
+    "#34495e", // 深灰蓝
+    "#e67e22", // 深橙色
+    "#27ae60", // 深绿色
+    "#d35400"  // 砖红色
+];
+
 // 核心函数1：读取words.txt文件并解析词汇数据
 async function loadWordsFromTxt() {
     try {
@@ -66,8 +80,34 @@ async function initGame() {
     
     // 第四步：生成游戏按钮（仅当词汇加载成功时）
     if (wordPairs.length > 0) {
+        // 先设置动态网格排版
+        setDynamicGridLayout();
+        // 再生成按钮
         generateGameButtons();
     }
+}
+
+// 新增：辅助函数：根据单词数量设置动态网格排版
+function setDynamicGridLayout() {
+    // 总按钮数 = 单词组数 * 2（每组英文+中文）
+    const totalBtnCount = wordGroupCount * 2;
+    
+    // 定义排版规则：根据总按钮数确定每行显示数量（兼顾美观和可读性）
+    let columns = 4; // 默认4列
+    if (totalBtnCount <= 6) {
+        columns = 2; // ≤6个按钮，每行2列
+    } else if (totalBtnCount <= 12) {
+        columns = 3; // 7-12个按钮，每行3列
+    } else if (totalBtnCount <= 20) {
+        columns = 5; // 13-20个按钮，每行5列
+    } else if (totalBtnCount > 20) {
+        columns = 6; // ＞20个按钮，每行6列（最大6列，避免过宽）
+    }
+    
+    // 动态设置grid模板列（覆盖css中的默认设置）
+    gameContainer.style.gridTemplateColumns = `repeat(${columns}, 120px)`;
+    
+    // 移动端兼容（≤550px强制2列，已在css中设置，此处无需重复）
 }
 
 // 辅助函数：绑定DOM元素（避免重复获取）
@@ -83,7 +123,7 @@ function bindDomElements() {
     timeDescElement = document.getElementById("timeDesc");
 }
 
-// 辅助函数：生成游戏按钮
+// 辅助函数：生成游戏按钮（新增随机颜色赋值）
 function generateGameButtons() {
     let allButtons = [];
     wordPairs.forEach(pair => {
@@ -102,13 +142,19 @@ function generateGameButtons() {
     // 随机打乱按钮顺序
     allButtons.sort(() => Math.random() - 0.5);
 
-    // 创建DOM按钮并添加点击事件
+    // 创建DOM按钮并添加点击事件+随机颜色
     allButtons.forEach(btnData => {
         const button = document.createElement("button");
-        button.className = `word-btn ${btnData.type}`;
+        button.className = `word-btn`; // 移除固定类型颜色类，仅保留基础类
         button.textContent = btnData.text;
         button.dataset.match = btnData.match;
         button.dataset.type = btnData.type;
+        
+        // 新增：为按钮赋值随机背景色（从颜色数组中随机选取）
+        const randomColor = btnColors[Math.floor(Math.random() * btnColors.length)];
+        button.style.backgroundColor = randomColor;
+        
+        // 绑定点击事件
         button.addEventListener("click", handleButtonClick);
         gameContainer.appendChild(button);
     });
