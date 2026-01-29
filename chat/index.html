@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>多人聊天室</title>
+  <style>
+    #messages { list-style: none; margin: 20px; padding: 0; max-height: 400px; overflow-y: auto; border: 1px solid #eee; padding: 10px; }
+    #messages li { padding: 8px; margin: 5px 0; border-radius: 4px; }
+    #messages li:nth-child(odd) { background: #f5f5f5; }
+    .input-area { margin: 20px; }
+    input { padding: 8px; width: 300px; margin-right: 10px; }
+    button { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <ul id="messages"></ul>
+  <div class="input-area">
+    <input type="text" id="nicknameInput" placeholder="输入你的昵称" />
+    <button onclick="setNickname()">确认昵称</button>
+  </div>
+  <div class="input-area">
+    <input type="text" id="messageInput" placeholder="输入消息" disabled />
+    <button onclick="sendMessage()" disabled>发送</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const socket = io(window.location.origin);
+    let nickname = '';
+
+    function setNickname() {
+      nickname = document.getElementById('nicknameInput').value.trim();
+      if (!nickname) return alert('昵称不能为空！');
+      socket.emit('set_nickname', nickname);
+      document.getElementById('nicknameInput').disabled = true;
+      document.querySelector('.input-area button').disabled = true;
+      document.getElementById('messageInput').disabled = false;
+      document.querySelectorAll('.input-area button')[1].disabled = false;
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+      socket.emit('chat_message', msg);
+      input.value = '';
+    }
+
+    socket.on('message', (msg) => {
+      const li = document.createElement('li');
+      li.textContent = msg;
+      document.getElementById('messages').appendChild(li);
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+  </script>
+</body>
+</html>
