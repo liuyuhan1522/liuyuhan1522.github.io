@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简易聊天室</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 0 10px;
+        }
+        #nickname-box {
+            margin-bottom: 10px;
+            display: flex;
+            gap: 8px;
+        }
+        #nickname {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #msg-box {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            height: 400px;
+            padding: 10px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+        }
+        .message {
+            margin-bottom: 8px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+        .my-msg {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+        }
+        .other-msg {
+            background: white;
+            border: 1px solid #eee;
+        }
+        .sender {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 2px;
+        }
+        #input-area {
+            display: flex;
+            gap: 8px;
+        }
+        #msg-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #send-btn {
+            padding: 0 20px;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="nickname-box">
+        <input type="text" id="nickname" placeholder="输入你的昵称">
+    </div>
+    <div id="msg-box"></div>
+    <div id="input-area">
+        <input type="text" id="msg-input" placeholder="输入消息...">
+        <button id="send-btn">发送</button>
+    </div>
+
+    <script>
+        const msgBox = document.getElementById('msg-box');
+        const msgInput = document.getElementById('msg-input');
+        const sendBtn = document.getElementById('send-btn');
+        const nicknameInput = document.getElementById('nickname');
+
+        function sendMessage() {
+            const text = msgInput.value.trim();
+            const nickname = nicknameInput.value.trim() || '匿名用户';
+            if (!text) return;
+            
+            addMessage(nickname, text, true);
+            msgInput.value = '';
+        }
+
+        function addMessage(name, text, isMe) {
+            const div = document.createElement('div');
+            div.className = 'message ' + (isMe ? 'my-msg' : 'other-msg');
+            if (!isMe) {
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'sender';
+                nameDiv.textContent = name;
+                div.appendChild(nameDiv);
+            }
+            const textDiv = document.createElement('div');
+            textDiv.textContent = text;
+            div.appendChild(textDiv);
+            msgBox.appendChild(div);
+            msgBox.scrollTop = msgBox.scrollHeight;
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        msgInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
