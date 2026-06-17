@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简易聊天室</title>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: sans-serif;
+        }
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #f0f2f5;
+        }
+        .header {
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .my-id {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .connect-bar {
+            display: flex;
+            gap: 10px;
+        }
+        #peer-id-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        #connect-btn {
+            padding: 8px 16px;
+            background: #1677ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #connect-btn:hover {
+            background: #4096ff;
+        }
+        #messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .message {
+            max-width: 70%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            line-height: 1.4;
+            font-size: 15px;
+        }
+        .message.other {
+            background: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+        .message.self {
+            background: #1677ff;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+        .status {
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            margin: 5px 0;
+        }
+        .input-bar {
+            padding: 15px 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+        #message-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 15px;
+            outline: none;
+        }
+        #send-btn {
+            padding: 0 20px;
+            background: #1677ff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        #send-btn:hover {
+            background: #4096ff;
+        }
+        #send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="my-id">我的ID: <span id="my-id">加载中...</span></div>
+        <div class="connect-bar">
+            <input type="text" id="peer-id-input" placeholder="输入对方ID，点击连接">
+            <button id="connect-btn">连接</button>
+        </div>
+    </div>
+
+    <div id="messages">
+        <div class="status">等待连接...</div>
+    </div>
+
+    <div class="input-bar">
+        <input type="text" id="message-input" placeholder="输入消息..." disabled>
+        <button id="send-btn" disabled>发送</button>
+    </div>
+
+    <script>
+        const myIdEl = document.getElementById('my-id');
+        const peerIdInput = document.getElementById('peer-id-input');
+        const connectBtn = document.getElementById('connect-btn');
+        const messagesEl = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        let peer;
+        let connection = null;
+
+        function initPeer() {
+            peer = new Peer();
+            peer.on('open', (id) => {
+                myIdEl.textContent = id;
+                addStatus('已就绪，把你的ID发给对方开始聊天');
+            });
+            peer.on('connection', (conn) => {
+                handleConnection(conn);
+                addStatus('对方已连接');
+            });
+            peer.on('error', (err) => {
+                addStatus('出错: ' + err.type);
+            });
+        }
+
+        function handleConnection(conn) {
+            connection = conn;
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            connectBtn.textContent = '已连接';
+            connectBtn.disabled = true;
+            peerIdInput.disabled = true;
+
+            conn.on('data', (data) => {
+                addMessage(data, 'other');
+            });
+
+            conn.on('close', () => {
+                addStatus('连接已断开');
+                messageInput.disabled = true;
+                sendBtn.disabled = true;
+                connectBtn.textContent = '连接';
+                connectBtn.disabled = false;
+                peerIdInput.disabled = false;
+                connection = null;
+            });
+        }
+
+        connectBtn.addEventListener('click', () => {
+            const peerId = peerIdInput.value.trim();
+            if (!peerId) {
+                alert('请输入对方ID');
+                return;
+            }
+            const conn = peer.connect(peerId);
+            conn.on('open', () => {
+                handleConnection(conn);
+                addStatus('连接成功');
+            });
+            conn.on('error', () => {
+                addStatus('连接失败，请检查ID是否正确');
+            });
+        });
+
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text || !connection) return;
+            connection.send(text);
+            addMessage(text, 'self');
+            messageInput.value = '';
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        function addMessage(text, type) {
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.textContent = text;
+            messagesEl.appendChild(div);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function addStatus(text) {
+            const div = document.createElement('div');
+            div.className = 'status';
+            div.textContent = text;
+            messagesEl.appendChild(div);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        initPeer();
+    </script>
+</body>
+</html>
