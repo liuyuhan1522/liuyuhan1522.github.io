@@ -15,62 +15,90 @@
         body {
             height: 100vh;
             display: flex;
-            flex-direction: column;
             background: #f5f7fa;
         }
-        /* 昵称登录弹窗 */
-        .login-mask {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.45);
+
+        /* 侧边栏 - 频道列表 */
+        .sidebar {
+            width: 220px;
+            background: #2c3e50;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .sidebar-header {
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            border-bottom: 1px solid #34495e;
+        }
+        .channel-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        .channel-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #bdc3c7;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
-            justify-content: center;
-            z-index: 100;
+            gap: 8px;
         }
-        .login-box {
-            background: #fff;
-            padding: 32px 28px;
-            border-radius: 12px;
-            width: 92%;
-            max-width: 360px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        .channel-item:hover {
+            background: #34495e;
+            color: #fff;
         }
-        .login-box h2 {
-            text-align: center;
-            color: #1d2129;
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-        #name-input {
-            width: 100%;
-            padding: 11px 14px;
-            border: 1px solid #e5e6eb;
-            border-radius: 8px;
-            font-size: 15px;
-            margin-bottom: 16px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        #name-input:focus {
-            border-color: #1677ff;
-        }
-        #enter-btn {
-            width: 100%;
-            padding: 11px;
+        .channel-item.active {
             background: #1677ff;
             color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            cursor: pointer;
-            transition: background 0.2s;
         }
-        #enter-btn:hover {
+        .channel-item::before {
+            content: '#';
+            opacity: 0.7;
+        }
+        .create-channel {
+            padding: 12px;
+            border-top: 1px solid #34495e;
+            display: flex;
+            gap: 6px;
+        }
+        .create-channel input {
+            flex: 1;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+            background: #34495e;
+            color: #fff;
+        }
+        .create-channel input::placeholder {
+            color: #95a5a6;
+        }
+        .create-channel button {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            background: #1677ff;
+            color: #fff;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .create-channel button:hover {
             background: #4096ff;
         }
 
-        /* 聊天主界面 */
+        /* 聊天主区域 */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
         .header {
             padding: 14px 20px;
             background: #fff;
@@ -83,6 +111,13 @@
             font-weight: 600;
             font-size: 16px;
             color: #1d2129;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .header .title::before {
+            content: '#';
+            color: #86909c;
         }
         .header .my-name {
             font-size: 14px;
@@ -172,9 +207,95 @@
             background: #c9cdd4;
             cursor: not-allowed;
         }
+
+        /* 昵称登录弹窗 */
+        .login-mask {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .login-box {
+            background: #fff;
+            padding: 32px 28px;
+            border-radius: 12px;
+            width: 92%;
+            max-width: 360px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        .login-box h2 {
+            text-align: center;
+            color: #1d2129;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        #name-input {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid #e5e6eb;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #name-input:focus {
+            border-color: #1677ff;
+        }
+        #enter-btn {
+            width: 100%;
+            padding: 11px;
+            background: #1677ff;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #enter-btn:hover {
+            background: #4096ff;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 180px;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- 左侧频道栏 -->
+    <div class="sidebar">
+        <div class="sidebar-header">频道列表</div>
+        <div class="channel-list" id="channel-list"></div>
+        <div class="create-channel">
+            <input type="text" id="new-channel-input" placeholder="创建新频道">
+            <button id="create-channel-btn">新建</button>
+        </div>
+    </div>
+
+    <!-- 右侧聊天区域 -->
+    <div class="chat-container">
+        <div class="header">
+            <div class="title" id="current-channel-title">大厅</div>
+            <div class="my-name" id="my-name">未登录</div>
+        </div>
+
+        <div id="messages">
+            <div class="status">连接中...</div>
+        </div>
+
+        <div class="input-bar">
+            <input type="text" id="message-input" placeholder="输入消息..." disabled>
+            <button id="send-btn" disabled>发送</button>
+        </div>
+    </div>
+
     <!-- 昵称登录弹窗 -->
     <div class="login-mask" id="login-mask">
         <div class="login-box">
@@ -182,21 +303,6 @@
             <input type="text" id="name-input" placeholder="请输入你的昵称">
             <button id="enter-btn">进入</button>
         </div>
-    </div>
-
-    <!-- 聊天主界面 -->
-    <div class="header">
-        <div class="title">多人聊天室</div>
-        <div class="my-name" id="my-name">未登录</div>
-    </div>
-
-    <div id="messages">
-        <div class="status">连接中...</div>
-    </div>
-
-    <div class="input-bar">
-        <input type="text" id="message-input" placeholder="输入消息..." disabled>
-        <button id="send-btn" disabled>发送</button>
     </div>
 
     <script>
@@ -207,13 +313,84 @@
         const messagesEl = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
         const sendBtn = document.getElementById('send-btn');
+        const channelListEl = document.getElementById('channel-list');
+        const currentChannelTitle = document.getElementById('current-channel-title');
+        const newChannelInput = document.getElementById('new-channel-input');
+        const createChannelBtn = document.getElementById('create-channel-btn');
 
         let myName = '';
         let drone = null;
         let room = null;
+        // 默认频道列表
+        let channels = ['大厅', '闲聊', '技术交流'];
+        let currentChannel = '大厅';
 
-        // 已预置你的 Channel ID
         const CHANNEL_ID = 'FzHaHy8c1zFNyfE0';
+
+        // 渲染频道列表
+        function renderChannelList() {
+            channelListEl.innerHTML = '';
+            channels.forEach(channel => {
+                const item = document.createElement('div');
+                item.className = `channel-item ${channel === currentChannel ? 'active' : ''}`;
+                item.textContent = channel;
+                item.addEventListener('click', () => switchChannel(channel));
+                channelListEl.appendChild(item);
+            });
+        }
+
+        // 切换频道
+        function switchChannel(channel) {
+            if (channel === currentChannel || !drone) return;
+            
+            // 取消订阅旧房间
+            if (room) {
+                drone.unsubscribe(`room_${currentChannel}`);
+            }
+
+            currentChannel = channel;
+            currentChannelTitle.textContent = channel;
+            renderChannelList();
+
+            // 清空消息列表
+            messagesEl.innerHTML = '';
+            addStatus(`已切换到 #${channel} 频道`);
+
+            // 订阅新房间
+            room = drone.subscribe(`room_${channel}`);
+            room.on('open', error => {
+                if (error) {
+                    addStatus('加入频道失败：' + error.message);
+                    return;
+                }
+                addStatus('欢迎来到 #' + currentChannel);
+            });
+
+            // 监听消息
+            room.on('message', message => {
+                if (message.clientId !== drone.clientId) {
+                    const data = message.data;
+                    addMessage(data.name, data.text, 'other');
+                }
+            });
+        }
+
+        // 创建新频道
+        function createChannel() {
+            const channelName = newChannelInput.value.trim();
+            if (!channelName) {
+                alert('请输入频道名称');
+                return;
+            }
+            if (channels.includes(channelName)) {
+                alert('该频道已存在');
+                return;
+            }
+            channels.push(channelName);
+            newChannelInput.value = '';
+            renderChannelList();
+            switchChannel(channelName);
+        }
 
         // 进入聊天室
         function enterChat() {
@@ -226,6 +403,9 @@
             myNameEl.textContent = '我：' + myName;
             loginMask.style.display = 'none';
 
+            // 渲染初始频道列表
+            renderChannelList();
+
             // 连接 Scaledrone
             drone = new Scaledrone(CHANNEL_ID);
             
@@ -235,28 +415,11 @@
                     return;
                 }
                 addStatus('已连接到聊天室');
-                
-                // 加入公共房间
-                room = drone.subscribe('public_chat');
-                room.on('open', error => {
-                    if (error) {
-                        addStatus('加入房间失败：' + error.message);
-                        return;
-                    }
-                    addStatus('欢迎进入聊天室');
-                    messageInput.disabled = false;
-                    sendBtn.disabled = false;
-                    messageInput.focus();
-                });
-
-                // 【修正】正确监听消息事件，事件名是 message，不是 data
-                room.on('message', message => {
-                    // 过滤自己发送的消息
-                    if (message.clientId !== drone.clientId) {
-                        const data = message.data;
-                        addMessage(data.name, data.text, 'other');
-                    }
-                });
+                // 默认加入大厅频道
+                switchChannel('大厅');
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                messageInput.focus();
             });
 
             drone.on('close', () => {
@@ -270,18 +433,13 @@
             });
         }
 
-        enterBtn.addEventListener('click', enterChat);
-        nameInput.addEventListener('keydown', e => {
-            if (e.key === 'Enter') enterChat();
-        });
-
         // 发送消息
         function sendMessage() {
             const text = messageInput.value.trim();
             if (!text || !drone) return;
             
             drone.publish({
-                room: 'public_chat',
+                room: `room_${currentChannel}`,
                 message: {
                     name: myName,
                     text: text
@@ -291,11 +449,6 @@
             addMessage(myName, text, 'self');
             messageInput.value = '';
         }
-
-        sendBtn.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keydown', e => {
-            if (e.key === 'Enter') sendMessage();
-        });
 
         // 添加消息到界面
         function addMessage(name, text, type) {
@@ -317,6 +470,22 @@
             messagesEl.appendChild(statusDiv);
             messagesEl.scrollTop = messagesEl.scrollHeight;
         }
+
+        // 事件绑定
+        enterBtn.addEventListener('click', enterChat);
+        nameInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') enterChat();
+        });
+
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        createChannelBtn.addEventListener('click', createChannel);
+        newChannelInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') createChannel();
+        });
     </script>
 </body>
 </html>
