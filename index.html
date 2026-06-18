@@ -3,129 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>简易聊天室</title>
-    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <title>多人聊天室</title>
+    <script src="https://cdn.scaledrone.com/scaledrone.min.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: sans-serif;
+            font-family: system-ui, -apple-system, sans-serif;
         }
         body {
             height: 100vh;
             display: flex;
             flex-direction: column;
-            background: #f0f2f5;
+            background: #f5f7fa;
         }
-        .header {
-            padding: 15px 20px;
-            background: white;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        .my-id {
-            margin-bottom: 10px;
-            font-size: 14px;
-            color: #666;
-        }
-        .connect-bar {
+        /* 昵称登录弹窗 */
+        .login-mask {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
             display: flex;
-            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
         }
-        #peer-id-input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
+        .login-box {
+            background: #fff;
+            padding: 32px 28px;
+            border-radius: 12px;
+            width: 92%;
+            max-width: 360px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         }
-        #connect-btn {
-            padding: 8px 16px;
+        .login-box h2 {
+            text-align: center;
+            color: #1d2129;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        #name-input {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid #e5e6eb;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #name-input:focus {
+            border-color: #1677ff;
+        }
+        #enter-btn {
+            width: 100%;
+            padding: 11px;
             background: #1677ff;
-            color: white;
+            color: #fff;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
+            font-size: 15px;
             cursor: pointer;
+            transition: background 0.2s;
         }
-        #connect-btn:hover {
+        #enter-btn:hover {
             background: #4096ff;
+        }
+
+        /* 聊天主界面 */
+        .header {
+            padding: 14px 20px;
+            background: #fff;
+            border-bottom: 1px solid #e5e6eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header .title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #1d2129;
+        }
+        .header .my-name {
+            font-size: 14px;
+            color: #86909c;
         }
         #messages {
             flex: 1;
-            padding: 20px;
+            padding: 18px 20px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
         .message {
-            max-width: 70%;
-            padding: 10px 14px;
+            max-width: 72%;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .message .name {
+            font-size: 12px;
+            color: #86909c;
+            padding: 0 8px;
+        }
+        .message .bubble {
+            padding: 9px 13px;
             border-radius: 12px;
-            line-height: 1.4;
+            line-height: 1.45;
             font-size: 15px;
+            word-break: break-word;
         }
         .message.other {
-            background: white;
             align-self: flex-start;
-            border-bottom-left-radius: 2px;
+        }
+        .message.other .bubble {
+            background: #fff;
+            border-bottom-left-radius: 3px;
+            color: #1d2129;
         }
         .message.self {
-            background: #1677ff;
-            color: white;
             align-self: flex-end;
-            border-bottom-right-radius: 2px;
+        }
+        .message.self .bubble {
+            background: #1677ff;
+            color: #fff;
+            border-bottom-right-radius: 3px;
         }
         .status {
             text-align: center;
-            color: #999;
+            color: #c9cdd4;
             font-size: 13px;
-            margin: 5px 0;
+            margin: 4px 0;
         }
         .input-bar {
-            padding: 15px 20px;
-            background: white;
-            border-top: 1px solid #e0e0e0;
+            padding: 14px 20px;
+            background: #fff;
+            border-top: 1px solid #e5e6eb;
             display: flex;
             gap: 10px;
         }
         #message-input {
             flex: 1;
             padding: 10px 14px;
-            border: 1px solid #ddd;
+            border: 1px solid #e5e6eb;
             border-radius: 20px;
             font-size: 15px;
             outline: none;
+            transition: border-color 0.2s;
+        }
+        #message-input:focus {
+            border-color: #1677ff;
         }
         #send-btn {
             padding: 0 20px;
             background: #1677ff;
-            color: white;
+            color: #fff;
             border: none;
             border-radius: 20px;
             cursor: pointer;
             font-size: 15px;
+            transition: background 0.2s;
         }
         #send-btn:hover {
             background: #4096ff;
         }
         #send-btn:disabled {
-            background: #ccc;
+            background: #c9cdd4;
             cursor: not-allowed;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="my-id">我的ID: <span id="my-id">加载中...</span></div>
-        <div class="connect-bar">
-            <input type="text" id="peer-id-input" placeholder="输入对方ID，点击连接">
-            <button id="connect-btn">连接</button>
+    <!-- 昵称登录弹窗 -->
+    <div class="login-mask" id="login-mask">
+        <div class="login-box">
+            <h2>进入聊天室</h2>
+            <input type="text" id="name-input" placeholder="请输入你的昵称">
+            <button id="enter-btn">进入</button>
         </div>
     </div>
 
+    <!-- 聊天主界面 -->
+    <div class="header">
+        <div class="title">多人聊天室</div>
+        <div class="my-name" id="my-name">未登录</div>
+    </div>
+
     <div id="messages">
-        <div class="status">等待连接...</div>
+        <div class="status">连接中...</div>
     </div>
 
     <div class="input-bar">
@@ -134,100 +200,121 @@
     </div>
 
     <script>
-        const myIdEl = document.getElementById('my-id');
-        const peerIdInput = document.getElementById('peer-id-input');
-        const connectBtn = document.getElementById('connect-btn');
+        const loginMask = document.getElementById('login-mask');
+        const nameInput = document.getElementById('name-input');
+        const enterBtn = document.getElementById('enter-btn');
+        const myNameEl = document.getElementById('my-name');
         const messagesEl = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
         const sendBtn = document.getElementById('send-btn');
 
-        let peer;
-        let connection = null;
+        let myName = '';
+        let drone = null;
+        let room = null;
 
-        function initPeer() {
-            peer = new Peer();
-            peer.on('open', (id) => {
-                myIdEl.textContent = id;
-                addStatus('已就绪，把你的ID发给对方开始聊天');
-            });
-            peer.on('connection', (conn) => {
-                handleConnection(conn);
-                addStatus('对方已连接');
-            });
-            peer.on('error', (err) => {
-                addStatus('出错: ' + err.type);
-            });
-        }
+        // 已预置你的 Channel ID
+        const CHANNEL_ID = 'FzHaHy8c1zFNyfE0';
 
-        function handleConnection(conn) {
-            connection = conn;
-            messageInput.disabled = false;
-            sendBtn.disabled = false;
-            connectBtn.textContent = '已连接';
-            connectBtn.disabled = true;
-            peerIdInput.disabled = true;
+        // 进入聊天室
+        function enterChat() {
+            const name = nameInput.value.trim();
+            if (!name) {
+                alert('请输入昵称');
+                return;
+            }
+            myName = name;
+            myNameEl.textContent = '我：' + myName;
+            loginMask.style.display = 'none';
 
-            conn.on('data', (data) => {
-                addMessage(data, 'other');
+            // 连接 Scaledrone
+            drone = new Scaledrone(CHANNEL_ID);
+            
+            drone.on('open', error => {
+                if (error) {
+                    addStatus('连接失败：' + error.message);
+                    return;
+                }
+                addStatus('已连接到聊天室');
+                
+                // 加入公共房间
+                room = drone.subscribe('public_chat');
+                room.on('open', error => {
+                    if (error) {
+                        addStatus('加入房间失败');
+                        return;
+                    }
+                    addStatus('欢迎进入聊天室');
+                    messageInput.disabled = false;
+                    sendBtn.disabled = false;
+                    messageInput.focus();
+                });
+
+                // 接收消息
+                room.on('data', (data, member) => {
+                    if (member.id !== drone.clientId) {
+                        addMessage(data.name, data.text, 'other');
+                    }
+                });
             });
 
-            conn.on('close', () => {
+            drone.on('close', () => {
                 addStatus('连接已断开');
                 messageInput.disabled = true;
                 sendBtn.disabled = true;
-                connectBtn.textContent = '连接';
-                connectBtn.disabled = false;
-                peerIdInput.disabled = false;
-                connection = null;
+            });
+
+            drone.on('error', error => {
+                addStatus('出错了：' + error.message);
             });
         }
 
-        connectBtn.addEventListener('click', () => {
-            const peerId = peerIdInput.value.trim();
-            if (!peerId) {
-                alert('请输入对方ID');
-                return;
-            }
-            const conn = peer.connect(peerId);
-            conn.on('open', () => {
-                handleConnection(conn);
-                addStatus('连接成功');
-            });
-            conn.on('error', () => {
-                addStatus('连接失败，请检查ID是否正确');
-            });
+        enterBtn.addEventListener('click', enterChat);
+        nameInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') enterChat();
         });
 
+        // 发送消息
         function sendMessage() {
             const text = messageInput.value.trim();
-            if (!text || !connection) return;
-            connection.send(text);
-            addMessage(text, 'self');
+            if (!text || !drone) return;
+            
+            drone.publish({
+                room: 'public_chat',
+                message: {
+                    name: myName,
+                    text: text
+                }
+            });
+            
+            addMessage(myName, text, 'self');
             messageInput.value = '';
         }
 
         sendBtn.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keydown', (e) => {
+        messageInput.addEventListener('keydown', e => {
             if (e.key === 'Enter') sendMessage();
         });
 
-        function addMessage(text, type) {
-            const div = document.createElement('div');
-            div.className = `message ${type}`;
-            div.textContent = text;
-            messagesEl.appendChild(div);
+        // 添加消息到界面
+        function addMessage(name, text, type) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${type}`;
+            msgDiv.innerHTML = `
+                <div class="name">${name}</div>
+                <div class="bubble">${text}</div>
+            `;
+            messagesEl.appendChild(msgDiv);
             messagesEl.scrollTop = messagesEl.scrollHeight;
         }
 
+        // 添加状态提示
         function addStatus(text) {
-            const div = document.createElement('div');
-            div.className = 'status';
-            div.textContent = text;
-            messagesEl.appendChild(div);
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'status';
+            statusDiv.textContent = text;
+            messagesEl.appendChild(statusDiv);
             messagesEl.scrollTop = messagesEl.scrollHeight;
         }
-
-        initPeer();
     </script>
 </body>
 </html>
