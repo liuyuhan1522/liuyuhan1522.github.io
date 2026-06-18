@@ -240,7 +240,7 @@
                 room = drone.subscribe('public_chat');
                 room.on('open', error => {
                     if (error) {
-                        addStatus('加入房间失败');
+                        addStatus('加入房间失败：' + error.message);
                         return;
                     }
                     addStatus('欢迎进入聊天室');
@@ -249,9 +249,11 @@
                     messageInput.focus();
                 });
 
-                // 接收消息
-                room.on('data', (data, member) => {
-                    if (member.id !== drone.clientId) {
+                // 【修正】正确监听消息事件，事件名是 message，不是 data
+                room.on('message', message => {
+                    // 过滤自己发送的消息
+                    if (message.clientId !== drone.clientId) {
+                        const data = message.data;
                         addMessage(data.name, data.text, 'other');
                     }
                 });
