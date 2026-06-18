@@ -628,6 +628,7 @@
             let currentChannel = '大厅';
             let onlineUsers = []; // 在线用户列表
             let currentManageChannel = null; // 当前编辑的频道
+            let channelHistory = {}; // 各频道历史消息缓存
             let allChannels = [
                 { name: '大厅', type: 'public', whitelist: [], readonlyList: [], creator: 'system' }
             ];
@@ -829,19 +830,15 @@
                     messagesEl.innerHTML = '';
                     addStatus('已连接到聊天室');
 
-                    // 订阅observable系统房间（只有observable房间才能获取成员列表）
+                    // 订阅observable系统房间（只有observable前缀的房间才能获取成员列表）
                     const systemRoom = drone.subscribe('observable-system_room');
                     
-                    // 先绑定成员事件，再处理打开事件
+                    // 监听在线成员变化
                     systemRoom.on('members', function(members) {
-                        // 提取所有在线用户昵称
+                        // 提取所有在线用户昵称，排除自己
                         onlineUsers = members
-                            .map(function(m) { 
-                                return m.clientData && m.clientData.name; 
-                            })
-                            .filter(function(name) { 
-                                return name && name !== myName; // 排除自己
-                            });
+                            .map(function(m) { return m.clientData && m.clientData.name; })
+                            .filter(function(username) { return username && username !== myName; });
                         updateUserSelects();
                     });
 
@@ -955,10 +952,46 @@
 
                     case 'delete_channel':
                         allChannels = allChannels.filter(function(c) { return c.name !== data.channelName; });
+                        // 删除对应历史消息
+                        delete channelHistory[data.channelName];
                         renderChannelList();
                         if (currentChannel === data.channelName) {
                             switchChannel('大厅');
                             addStatus('频道 ' + data.channelName + ' 已被删除，已切换到大厅');
+                        }
+                        break;
+
+                    // 处理历史消息请求（仅管理员回复）
+                    case 'request_channel_history':
+                        if (isAdmin) {
+                            const history = channelHistory[data.channelName] || [];
+                            drone.publish({
+                                room: 'observable-system_room',
+                                message: {
+                                    type: 'response_channel_history',
+                                    channelName: data.channelName,
+                                    history: history,
+                                    toClientId: data.fromClientId
+                                }
+                            });
+                        }
+                        break;
+
+                    // 接收历史消息回复
+                    case 'response_channel_history':
+                        // 只处理发给自己的消息
+                        if (data.toClientId === drone.clientId && currentChannel === data.channelName) {
+                            const history = data.history || [];
+                            // 保存到本地缓存
+                            channelHistory[data.channelName] = history;
+                            // 渲染历史消息
+                            if (history.length > 0) {
+                                history.forEach(function(msg) {
+                                    const type = msg.name === myName ? 'self' : 'other';
+                                    addMessage(msg.name, msg.text, type);
+                                });
+                                addStatus('已同步 ' + history.length + ' 条历史消息');
+                            }
                         }
                         break;
                 }
@@ -989,6 +1022,15 @@
                     if (!whitelist.includes(myName)) {
                         whitelist.push(myName);
                     }
+
+                    // 校验白名单与只读名单是否重复
+                    const duplicates = whitelist.filter(function(user) {
+                        return readonlyList.includes(user);
+                    });
+                    if (duplicates.length > 0) {
+                        alert('白名单与只读名单存在重复用户：' + duplicates.join('、') + '\n请移除重复项后再创建');
+                        return;
+                    }
                 }
 
                 const newChannel = {
@@ -1000,6 +1042,8 @@
                 };
 
                 allChannels.push(newChannel);
+                // 初始化频道历史
+                channelHistory[name] = [];
                 createModal.classList.remove('show');
                 
                 // 广播新增频道
@@ -1025,16 +1069,20 @@
                     newWhitelist.push(myName);
                 }
 
-                // 移除同时在两个名单里的用户（白名单优先）
-                const finalReadonly = newReadonly.filter(function(u) {
-                    return !newWhitelist.includes(u);
+                // 校验白名单与只读名单是否重复
+                const duplicates = newWhitelist.filter(function(user) {
+                    return newReadonly.includes(user);
                 });
+                if (duplicates.length > 0) {
+                    alert('白名单与只读名单存在重复用户：' + duplicates.join('、') + '\n请移除重复项后再保存');
+                    return;
+                }
 
                 // 更新本地数据
                 const idx = allChannels.findIndex(function(c) { return c.name === currentManageChannel.name; });
                 if (idx > -1) {
                     allChannels[idx].whitelist = newWhitelist;
-                    allChannels[idx].readonlyList = finalReadonly;
+                    allChannels[idx].readonlyList = newReadonly;
                 }
 
                 // 广播更新
@@ -1056,6 +1104,8 @@
             // 删除频道
             function deleteChannel(channelName) {
                 allChannels = allChannels.filter(function(c) { return c.name !== channelName; });
+                // 删除对应历史消息
+                delete channelHistory[channelName];
                 drone.publish({
                     room: 'observable-system_room',
                     message: { type: 'delete_channel', channelName: channelName }
@@ -1116,7 +1166,7 @@
                 sendBtn.disabled = isReadonly;
 
                 if (isReadonly) {
-                    messageInput.placeholder = '你处于旁观模式，无法发送消息';
+                    messageInput.placeholder = '你已死亡，无法发送消息';
                 } else {
                     messageInput.placeholder = '输入消息...';
                 }
@@ -1140,8 +1190,27 @@
                 currentChannelTitle.textContent = channelName;
                 renderChannelList();
 
+                // 清空消息列表
                 messagesEl.innerHTML = '';
                 addStatus('已切换到 #' + channelName + ' 频道');
+
+                // 本地有历史直接渲染，没有则请求管理员同步
+                if (channelHistory[channelName] && channelHistory[channelName].length > 0) {
+                    channelHistory[channelName].forEach(function(msg) {
+                        const type = msg.name === myName ? 'self' : 'other';
+                        addMessage(msg.name, msg.text, type);
+                    });
+                } else if (!isAdmin) {
+                    // 非管理员请求同步历史
+                    drone.publish({
+                        room: 'observable-system_room',
+                        message: {
+                            type: 'request_channel_history',
+                            channelName: channelName,
+                            fromClientId: drone.clientId
+                        }
+                    });
+                }
 
                 // 订阅新房间
                 currentRoom = drone.subscribe('room_' + channelName);
@@ -1155,6 +1224,11 @@
                     if (msg.clientId !== drone.clientId) {
                         const data = msg.data;
                         addMessage(data.name, data.text, 'other');
+                        // 保存到本地历史
+                        if (!channelHistory[channelName]) {
+                            channelHistory[channelName] = [];
+                        }
+                        channelHistory[channelName].push({ name: data.name, text: data.text });
                     }
                 });
 
@@ -1170,7 +1244,7 @@
                 // 只读权限二次校验
                 const channel = allChannels.find(function(c) { return c.name === currentChannel; });
                 if (channel && channel.readonlyList && channel.readonlyList.includes(myName)) {
-                    addStatus('你处于旁观模式，无法发送消息');
+                    addStatus('你已死亡，无法发送消息');
                     return;
                 }
 
@@ -1180,6 +1254,13 @@
                 });
 
                 addMessage(myName, text, 'self');
+                
+                // 保存到本地历史
+                if (!channelHistory[currentChannel]) {
+                    channelHistory[currentChannel] = [];
+                }
+                channelHistory[currentChannel].push({ name: myName, text: text });
+
                 messageInput.value = '';
             }
 
@@ -1261,44 +1342,4 @@
                 selectIds.forEach(function(id) {
                     const select = document.getElementById(id);
                     if (!select) return;
-                    const currentVal = select.value;
-                    // 保留默认选项
-                    select.innerHTML = '<option value="">选择在线用户添加</option>';
-                    // 添加在线用户
-                    onlineUsers.forEach(function(username) {
-                        const option = document.createElement('option');
-                        option.value = username;
-                        option.textContent = username;
-                        select.appendChild(option);
-                    });
-                    select.value = currentVal;
-                });
-            }
-
-            // 添加消息气泡
-            function addMessage(name, text, type) {
-                const msgDiv = document.createElement('div');
-                msgDiv.className = 'message ' + type;
-                msgDiv.innerHTML = `
-                    <div class="name">${name}</div>
-                    <div class="bubble">${text}</div>
-                `;
-                messagesEl.appendChild(msgDiv);
-                messagesEl.scrollTop = messagesEl.scrollHeight;
-            }
-
-            // 添加状态提示
-            function addStatus(text) {
-                const statusDiv = document.createElement('div');
-                statusDiv.className = 'status';
-                statusDiv.textContent = text;
-                messagesEl.appendChild(statusDiv);
-                messagesEl.scrollTop = messagesEl.scrollHeight;
-            }
-
-            // 页面加载完成自动聚焦昵称输入框
-            nameInput.focus();
-        });
-    </script>
-</body>
-</html>
+                    const currentVal =
