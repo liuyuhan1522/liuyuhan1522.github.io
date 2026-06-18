@@ -805,7 +805,7 @@
                 myName = name;
                 myNameEl.textContent = '我：' + myName;
 
-                // 连接Scaledrone，携带昵称信息
+                // 连接Scaledrone，携带昵称数据
                 try {
                     drone = new Scaledrone(CHANNEL_ID, {
                         data: { name: myName }
@@ -829,22 +829,48 @@
                     messagesEl.innerHTML = '';
                     addStatus('已连接到聊天室');
 
-                    // 订阅系统房间同步频道数据
-                    const systemRoom = drone.subscribe('system_room');
-                    systemRoom.on('open', function() {
-                        // 请求同步最新频道列表
-                        drone.publish({
-                            room: 'system_room',
-                            message: { type: 'request_sync', from: myName }
-                        });
+                    // 订阅observable系统房间（只有observable房间才能获取成员列表）
+                    const systemRoom = drone.subscribe('observable-system_room');
+                    
+                    // 先绑定成员事件，再处理打开事件
+                    systemRoom.on('members', function(members) {
+                        // 提取所有在线用户昵称
+                        onlineUsers = members
+                            .map(function(m) { 
+                                return m.clientData && m.clientData.name; 
+                            })
+                            .filter(function(name) { 
+                                return name && name !== myName; // 排除自己
+                            });
+                        updateUserSelects();
                     });
 
-                    // 监听在线成员变化
-                    systemRoom.on('members', function(members) {
-                        onlineUsers = members
-                            .map(function(m) { return m.clientData && m.clientData.name; })
-                            .filter(Boolean);
-                        updateUserSelects();
+                    systemRoom.on('member_join', function(member) {
+                        const userName = member.clientData && member.clientData.name;
+                        if (userName && userName !== myName && !onlineUsers.includes(userName)) {
+                            onlineUsers.push(userName);
+                            updateUserSelects();
+                        }
+                    });
+
+                    systemRoom.on('member_leave', function(member) {
+                        const userName = member.clientData && member.clientData.name;
+                        if (userName) {
+                            onlineUsers = onlineUsers.filter(function(u) { return u !== userName; });
+                            updateUserSelects();
+                        }
+                    });
+
+                    systemRoom.on('open', function(error) {
+                        if (error) {
+                            addStatus('系统房间连接失败');
+                            return;
+                        }
+                        // 请求同步最新频道列表
+                        drone.publish({
+                            room: 'observable-system_room',
+                            message: { type: 'request_sync', from: myName }
+                        });
                     });
 
                     // 监听系统消息
@@ -882,7 +908,7 @@
                         // 管理员回复同步
                         if (isAdmin) {
                             drone.publish({
-                                room: 'system_room',
+                                room: 'observable-system_room',
                                 message: { type: 'sync_channels', channels: allChannels }
                             });
                         }
@@ -978,7 +1004,7 @@
                 
                 // 广播新增频道
                 drone.publish({
-                    room: 'system_room',
+                    room: 'observable-system_room',
                     message: { type: 'add_channel', channel: newChannel }
                 });
 
@@ -992,7 +1018,7 @@
                 if (!currentManageChannel) return;
 
                 const newWhitelist = getTagUsers('manage-whitelist-tags');
-                const newReadonlyList = getTagUsers('manage-readonly-tags');
+                const newReadonly = getTagUsers('manage-readonly-tags');
 
                 // 确保管理员自己在白名单
                 if (!newWhitelist.includes(myName)) {
@@ -1000,7 +1026,7 @@
                 }
 
                 // 移除同时在两个名单里的用户（白名单优先）
-                const finalReadonly = newReadonlyList.filter(function(u) {
+                const finalReadonly = newReadonly.filter(function(u) {
                     return !newWhitelist.includes(u);
                 });
 
@@ -1013,7 +1039,7 @@
 
                 // 广播更新
                 drone.publish({
-                    room: 'system_room',
+                    room: 'observable-system_room',
                     message: { type: 'update_channel', channel: allChannels[idx] }
                 });
 
@@ -1031,7 +1057,7 @@
             function deleteChannel(channelName) {
                 allChannels = allChannels.filter(function(c) { return c.name !== channelName; });
                 drone.publish({
-                    room: 'system_room',
+                    room: 'observable-system_room',
                     message: { type: 'delete_channel', channelName: channelName }
                 });
                 renderChannelList();
@@ -1238,9 +1264,8 @@
                     const currentVal = select.value;
                     // 保留默认选项
                     select.innerHTML = '<option value="">选择在线用户添加</option>';
-                    // 添加在线用户（排除自己）
+                    // 添加在线用户
                     onlineUsers.forEach(function(username) {
-                        if (username === myName) return;
                         const option = document.createElement('option');
                         option.value = username;
                         option.textContent = username;
